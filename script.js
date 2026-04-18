@@ -1,4 +1,4 @@
-// script.js - Versión Final Mejorada
+// script.js - Versión Final con Botón Global Visible
 
 let manifest = {};
 let currentFilePath = "";
@@ -82,7 +82,19 @@ async function loadFile(chapterKey, fileName, displayName) {
     </button>`;
 }
 
-// ==================== MODAL HERRAMIENTAS IA (solo cuando hay PDF seleccionado) ====================
+// ==================== HEADER CON BOTÓN GLOBAL ====================
+function createGlobalButton() {
+  const header = document.querySelector('.p-4.border-b');
+  if (!header) return;
+
+  const globalBtn = document.createElement('button');
+  globalBtn.className = "bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-2xl flex items-center gap-2 font-medium ml-4";
+  globalBtn.innerHTML = `<i class="fas fa-globe"></i> Preguntar a Todo el Máster`;
+  globalBtn.onclick = () => startQuestionMode(true);
+  header.appendChild(globalBtn);
+}
+
+// ==================== MODAL HERRAMIENTAS IA (solo para PDF seleccionado) ====================
 function openIAModal() {
   document.getElementById("ia-modal").classList.remove("hidden");
   showIAOptions();
@@ -115,11 +127,6 @@ function showIAOptions() {
     </div>`;
 }
 
-// ==================== BOTÓN GLOBAL: Preguntar a Todos los PDFs ====================
-function openGlobalQuestionMode() {
-  startQuestionMode(true);
-}
-
 // ==================== MODO PREGUNTAS ====================
 let isGlobalSearch = false;
 
@@ -135,7 +142,7 @@ async function startQuestionMode(global = false) {
   }
 
   if (!global && (!currentPdfText || currentPdfText.length < 100)) {
-    viewer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fas fa-spinner fa-spin text-6xl"></i><p class="mt-4">Cargando texto del documento...</p></div>`;
+    viewer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fas fa-spinner fa-spin text-6xl"></i><p class="mt-4">Cargando texto...</p></div>`;
     currentPdfText = await extractPDFText(currentFilePath);
   }
 
@@ -146,7 +153,7 @@ async function startQuestionMode(global = false) {
           <span class="text-4xl">${global ? '🌐' : '❓'}</span>
           <div>
             <h2 class="text-3xl font-bold">${global ? 'Preguntar a Todo el Máster' : 'Preguntar al Documento'}</h2>
-            <p class="text-gray-400">${global ? 'Busca información en todos los PDFs del curso' : currentTitle}</p>
+            <p class="text-gray-400">${global ? 'Busca en todos los PDFs del curso' : currentTitle}</p>
           </div>
         </div>
         <button onclick="returnToLastPDF()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-2xl flex items-center gap-2">
@@ -188,7 +195,7 @@ async function sendQuestion() {
   const historyDiv = document.getElementById("history");
   const loadingId = Date.now();
 
-  historyDiv.innerHTML = `<div id="loading-${loadingId}" class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando tu pregunta...</div>` + historyDiv.innerHTML;
+  historyDiv.innerHTML = `<div id="loading-${loadingId}" class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando...</div>` + historyDiv.innerHTML;
 
   try {
     let prompt = `Eres un experto en dolor crónico. Responde con precisión y cita las fuentes cuando sea posible.\n\nPregunta: ${question}\n\n`;
@@ -363,7 +370,6 @@ function saveApiKey() {
   document.getElementById('apikey-modal').remove();
 }
 
-// Iniciar la aplicación
-loadManifest();
 // Iniciar
 loadManifest();
+createGlobalButton();   // ← Esto crea el botón visible
