@@ -10,14 +10,21 @@
   <style>
     .viewer { height: calc(100vh - 70px); }
     .accordion-content { transition: all 0.3s ease; }
+    .prose-invert { color: #e5e7eb; }
+    .prose-invert h1, .prose-invert h2, .prose-invert h3 { color: #f3e8ff; }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100">
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
     <div class="w-80 bg-gray-900 border-r border-gray-700 overflow-y-auto">
-      <div class="p-5 border-b border-gray-700 bg-gray-950 sticky top-0">
+      <div class="p-5 border-b border-gray-700 bg-gray-950 sticky top-0 flex justify-between items-center">
         <h1 class="text-xl font-bold text-white">📚 Máster en Dolor</h1>
+        <button onclick="showApiKeyModal()" 
+                class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl flex items-center gap-2 text-sm">
+          <i class="fas fa-key"></i>
+          <span>Mi API Key</span>
+        </button>
       </div>
       <div id="chapters-list" class="p-3"></div>
     </div>
