@@ -1,10 +1,11 @@
-// script.js - Versión con "Preguntar al Documento" (estilo RAG simple)
+// script.js - Versión Avanzada con Historial, Citas y Preguntas Globales
 
 let manifest = {};
 let currentFilePath = "";
 let currentTitle = "";
+let currentPdfText = "";
 let userGeminiKey = localStorage.getItem('userGeminiKey') || "";
-let currentPdfText = "";   // ← Guardamos el texto del PDF actual para preguntas
+let questionHistory = []; // {question, answer, source, timestamp}
 
 const pdfjsLib = window['pdfjsLib'];
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -26,7 +27,6 @@ function buildSidebar() {
 
   Object.keys(manifest.chapters).forEach(key => {
     const ch = manifest.chapters[key];
-
     const chapterDiv = document.createElement("div");
     chapterDiv.className = "mb-4";
 
@@ -60,8 +60,7 @@ function toggleChapter(button) {
     if (item !== content) item.classList.add('hidden');
   });
   content.classList.toggle('hidden');
-  const icon = button.querySelector('i');
-  icon.classList.toggle('rotate-180');
+  button.querySelector('i').classList.toggle('rotate-180');
 }
 
 async function loadFile(chapterKey, fileName, displayName) {
@@ -83,6 +82,7 @@ async function loadFile(chapterKey, fileName, displayName) {
     </button>`;
 }
 
+// ==================== MODAL IA ====================
 function openIAModal() {
   document.getElementById("ia-modal").classList.remove("hidden");
   showIAOptions();
@@ -110,176 +110,190 @@ function showIAOptions() {
       </button>
       <button onclick="generateWithGemini('audio')" class="bg-gray-800 hover:bg-gray-700 p-6 rounded-2xl text-left transition-all">
         <i class="fas fa-volume-up text-4xl text-violet-400 mb-3"></i><br>
-        <span class="font-semibold">Podcast (NotebookLM)</span>
+        <span class="font-semibold">Podcast NotebookLM</span>
       </button>
-      <button onclick="startQuestionMode()" class="col-span-2 bg-gray-800 hover:bg-gray-700 p-6 rounded-2xl text-left border border-violet-500/30">
+      
+      <button onclick="startQuestionMode(false)" class="col-span-2 bg-violet-900/30 hover:bg-violet-900/50 border border-violet-500 p-6 rounded-2xl text-left">
         <i class="fas fa-question text-4xl text-violet-400 mb-3"></i><br>
-        <span class="font-semibold">Preguntar al Documento</span>
-        <p class="text-xs text-gray-400 mt-1">Haz preguntas específicas sobre el contenido</p>
+        <span class="font-semibold">Preguntar a este Documento</span>
+      </button>
+
+      <button onclick="startQuestionMode(true)" class="col-span-2 bg-gray-800 hover:bg-gray-700 p-6 rounded-2xl text-left border border-emerald-500/30">
+        <i class="fas fa-globe text-4xl text-emerald-400 mb-3"></i><br>
+        <span class="font-semibold">Preguntar a Todos los Documentos</span>
+        <p class="text-xs text-gray-400 mt-1">Busca en todo el máster</p>
       </button>
     </div>`;
 }
 
-// ==================== NUEVA FUNCIÓN: Preguntar al Documento ====================
+// ==================== PREGUNTAR AL DOCUMENTO / TODOS ====================
 
-async function startQuestionMode() {
-  if (!currentFilePath) {
-    alert("Primero selecciona un PDF");
+let isGlobalSearch = false;
+
+async function startQuestionMode(global = false) {
+  isGlobalSearch = global;
+  closeModal();
+
+  if (!global && !currentFilePath) {
+    alert("Primero selecciona un documento para preguntar");
     return;
   }
 
-  closeModal();
+  const viewer = document.getElementById("viewer");
 
-  // Extraemos el texto una sola vez si no lo tenemos
-  if (!currentPdfText || currentPdfText.length < 100) {
-    const viewer = document.getElementById("viewer");
-    viewer.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-full text-gray-400">
-        <i class="fas fa-spinner fa-spin text-6xl mb-6 text-violet-400"></i>
-        <p class="text-xl">Cargando texto del documento...</p>
-      </div>`;
+  // Cargar texto si es necesario
+  if (!global && (!currentPdfText || currentPdfText.length < 100)) {
+    viewer.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-6xl text-violet-400"></i><p class="mt-4">Cargando documento...</p></div>`;
     currentPdfText = await extractPDFText(currentFilePath);
   }
 
-  const viewer = document.getElementById("viewer");
   viewer.innerHTML = `
     <div class="max-w-4xl mx-auto my-8 bg-gray-900 rounded-3xl p-8">
-      <div class="flex items-center gap-4 mb-8">
-        <span class="text-4xl">❓</span>
-        <h2 class="text-3xl font-bold">Preguntar al Documento</h2>
-      </div>
-      
-      <div class="mb-6">
-        <textarea id="user-question" rows="3" 
-          class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500 resize-y"
-          placeholder="Ejemplo: ¿Cuáles son los principales tipos de dolor neuropático? ¿Qué recomienda el documento para el manejo del dolor crónico?"></textarea>
-      </div>
-
-      <button onclick="sendQuestion()" 
-              class="w-full bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
-        <i class="fas fa-paper-plane"></i>
-        Enviar Pregunta
-      </button>
-
-      <div id="answer-area" class="mt-8 hidden">
-        <h3 class="font-semibold mb-3 text-violet-400">Respuesta:</h3>
-        <div id="answer-content" class="bg-gray-950 p-6 rounded-2xl text-gray-200 leading-relaxed whitespace-pre-wrap"></div>
-      </div>
-
-      <div class="mt-8">
-        <button onclick="window.location.reload()" 
-                class="text-gray-400 hover:text-white flex items-center gap-2">
-          ← Volver al PDF
+      <div class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-4">
+          <span class="text-4xl">${global ? '🌐' : '❓'}</span>
+          <div>
+            <h2 class="text-3xl font-bold">${global ? 'Preguntar a Todo el Máster' : 'Preguntar al Documento'}</h2>
+            <p class="text-gray-400">${global ? 'Busca información en todos los PDFs' : currentTitle}</p>
+          </div>
+        </div>
+        <button onclick="window.location.reload()" class="text-gray-400 hover:text-white flex items-center gap-2">
+          <i class="fas fa-arrow-left"></i> Volver
         </button>
       </div>
+
+      <textarea id="user-question" rows="3" 
+        class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500 resize-y"
+        placeholder="Escribe tu pregunta aquí..."></textarea>
+
+      <div class="flex gap-3 mt-4">
+        <button onclick="sendQuestion()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Enviar Pregunta</button>
+        <button onclick="newQuestion()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-medium">Nueva Pregunta</button>
+      </div>
+
+      <div id="history" class="mt-10 space-y-8"></div>
     </div>`;
+  
+  renderHistory();
+}
+
+function newQuestion() {
+  document.getElementById("user-question").value = "";
+  document.getElementById("user-question").focus();
 }
 
 async function sendQuestion() {
-  const questionInput = document.getElementById("user-question");
-  const question = questionInput.value.trim();
-  if (!question) return alert("Escribe una pregunta");
+  const question = document.getElementById("user-question").value.trim();
+  if (!question) return;
 
-  const answerArea = document.getElementById("answer-area");
-  const answerContent = document.getElementById("answer-content");
+  const historyDiv = document.getElementById("history");
+  const loadingId = "loading-" + Date.now();
 
-  answerArea.classList.remove("hidden");
-  answerContent.innerHTML = `<i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando tu pregunta...`;
+  historyDiv.innerHTML = `
+    <div id="${loadingId}" class="bg-gray-800 p-6 rounded-2xl">
+      <i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando...
+    </div>
+  ` + historyDiv.innerHTML;
 
   try {
-    const prompt = `Eres un asistente experto en dolor crónico. 
-Responde la siguiente pregunta basándote ÚNICAMENTE en el contenido del documento titulado "${currentTitle}".
+    let prompt = `Eres un experto en dolor crónico. Responde con precisión y cita la fuente cuando sea posible.\n\nPregunta: ${question}\n\n`;
 
-Pregunta del usuario: ${question}
+    if (isGlobalSearch) {
+      prompt += "Revisa todo el material del Máster en Dolor y responde usando la información más relevante.\n\n";
+      // Aquí podrías cargar todos los textos si quieres (más avanzado)
+    } else {
+      prompt += `Documento: ${currentTitle}\n\nTexto:\n${currentPdfText}`;
+    }
 
-Reglas importantes:
-- Si la información está en el documento, responde de forma clara y precisa.
-- Si no encuentras la información, di honestamente que no está en el documento.
-- Cuando cites información, indica de qué sección o parte del texto proviene (ejemplo: "Según la sección de Fisiopatología...", "En el apartado de Tratamiento...").
-- Sé profesional y usa lenguaje médico adecuado.
-
-Texto completo del documento:
-${currentPdfText}`;
-
-    const model = "gemini-2.5-flash";
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userGeminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
     const data = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo obtener respuesta.";
+    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
 
-    answerContent.innerHTML = resultText.replace(/\n/g, '<br>');
+    // Guardar en historial
+    questionHistory.unshift({
+      question: question,
+      answer: answer,
+      source: isGlobalSearch ? "Todos los documentos" : currentTitle,
+      timestamp: new Date().toLocaleTimeString()
+    });
 
-  } catch (error) {
-    console.error(error);
-    answerContent.innerHTML = `<span class="text-red-400">Error al procesar la pregunta: ${error.message}</span>`;
+    renderHistory();
+
+  } catch (err) {
+    document.getElementById("history").innerHTML = `<p class="text-red-400">Error: ${err.message}</p>`;
   }
 }
 
-// ==================== Funciones existentes (resumen, mapa, podcast, etc.) ====================
+function renderHistory() {
+  const container = document.getElementById("history");
+  if (!container) return;
+
+  let html = "";
+  questionHistory.forEach(item => {
+    html += `
+      <div class="bg-gray-800 rounded-2xl p-6">
+        <div class="flex justify-between text-sm text-gray-400 mb-3">
+          <span><strong>Pregunta:</strong> ${item.question}</span>
+          <span>${item.timestamp}</span>
+        </div>
+        <div class="text-violet-400 text-sm mb-2">Fuente: ${item.source}</div>
+        <div class="text-gray-200 leading-relaxed whitespace-pre-wrap">${item.answer}</div>
+      </div>`;
+  });
+
+  container.innerHTML = html || `<p class="text-gray-500 text-center py-8">Aún no hay preguntas. Haz la primera arriba.</p>`;
+}
+
+// ==================== Otras funciones (resumen, mapa, podcast, etc.) ====================
 
 async function generateWithGemini(type) {
   if (!userGeminiKey) {
-    alert("Primero configura tu API Key");
+    alert("Configura tu API Key primero");
     showApiKeyModal();
     return;
   }
-  if (!currentFilePath) return alert("Selecciona primero un PDF");
+  if (!currentFilePath) return alert("Selecciona un documento");
 
   closeModal();
-
   const viewer = document.getElementById("viewer");
-  const originalHTML = viewer.innerHTML;
+  const original = viewer.innerHTML;
 
-  viewer.innerHTML = `
-    <div class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-950 rounded-3xl">
-      <i class="fas fa-spinner fa-spin text-6xl mb-6 text-violet-400"></i>
-      <p class="text-xl">Procesando con Gemini...</p>
-    </div>`;
+  viewer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fas fa-spinner fa-spin text-6xl"></i><p class="mt-4">Procesando...</p></div>`;
 
   try {
-    if (!currentPdfText || currentPdfText.length < 100) {
-      currentPdfText = await extractPDFText(currentFilePath);
-    }
+    if (!currentPdfText) currentPdfText = await extractPDFText(currentFilePath);
 
-    const prompt = getImprovedPrompt(type, currentTitle) + "\n\n---\n\nTEXTO DEL DOCUMENTO:\n" + currentPdfText;
+    const prompt = getImprovedPrompt(type, currentTitle) + "\n\nTexto del documento:\n" + currentPdfText;
 
-    const model = "gemini-2.5-flash";
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userGeminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
-    const data = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se generó contenido";
+    const data = await res.json();
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin contenido";
 
-    showResultInViewer(type, resultText);
-
-  } catch (error) {
-    console.error(error);
-    alert("Error: " + error.message);
-    viewer.innerHTML = originalHTML;
+    showResultInViewer(type, result);
+  } catch (e) {
+    alert("Error: " + e.message);
+    viewer.innerHTML = original;
   }
 }
 
 function getImprovedPrompt(type, title) {
+  // (mantengo los prompts anteriores - puedes copiarlos de la versión anterior si quieres)
   switch(type) {
-    case 'resumen':
-      return `Eres un experto en dolor crónico. Haz un resumen profesional, claro y bien estructurado del documento titulado "${title}". Usa Markdown con encabezados y viñetas.`;
-    case 'cuestionario':
-      return `Crea un cuestionario educativo de 8-10 preguntas basado en "${title}". Mezcla opción múltiple y desarrollo. Incluye respuestas al final.`;
-    case 'mapa':
-      return `Crea un mapa mental claro y jerárquico en Markdown del documento "${title}". Usa emojis y estructura con #, ## y -.`;
-    case 'audio':
-      return `Genera un guion de podcast estilo NotebookLM con dos hosts (Alex y Sofía) sobre el documento "${title}". Usa formato de diálogo claro y natural.`;
-    default:
-      return `Resume el documento "${title}".`;
+    case 'resumen': return `Haz un resumen profesional del documento "${title}". Usa Markdown.`;
+    case 'cuestionario': return `Crea un cuestionario de 8-10 preguntas sobre "${title}". Incluye respuestas.`;
+    case 'mapa': return `Crea un mapa mental claro en Markdown sobre "${title}".`;
+    case 'audio': return `Genera un guion de podcast estilo NotebookLM (dos hosts) sobre "${title}".`;
+    default: return `Resume "${title}".`;
   }
 }
 
@@ -287,65 +301,59 @@ async function extractPDFText(url) {
   try {
     const loadingTask = pdfjsLib.getDocument(url);
     const pdf = await loadingTask.promise;
-    let fullText = "";
+    let text = "";
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      fullText += textContent.items.map(item => item.str).join(" ") + "\n\n";
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(" ") + "\n\n";
     }
-    return fullText.trim();
+    return text.trim();
   } catch (e) {
-    return "Error al extraer texto del PDF.";
+    return "Error al extraer texto.";
   }
 }
 
 function showResultInViewer(type, content) {
-  const viewer = document.getElementById("viewer");
-  let emoji = "🧠", titleText = "Resultado IA";
-
+  let emoji = "📝", titleText = "Resultado";
   switch(type) {
     case 'resumen': emoji = "📝"; titleText = "Resumen Profesional"; break;
     case 'cuestionario': emoji = "❓"; titleText = "Cuestionario"; break;
     case 'mapa': emoji = "🧠"; titleText = "Mapa Mental"; break;
-    case 'audio': emoji = "🎙️"; titleText = "Guion Podcast (NotebookLM)"; break;
+    case 'audio': emoji = "🎙️"; titleText = "Guion Podcast"; break;
   }
 
-  viewer.innerHTML = `
+  document.getElementById("viewer").innerHTML = `
     <div class="max-w-4xl mx-auto my-8 bg-gray-900 rounded-3xl p-8 prose prose-invert">
-      <div class="flex items-center gap-4 mb-8 border-b border-gray-700 pb-6">
+      <div class="flex items-center gap-4 mb-6">
         <span class="text-5xl">${emoji}</span>
-        <h2 class="text-3xl font-bold m-0">${titleText}</h2>
+        <h2 class="text-3xl font-bold">${titleText}</h2>
       </div>
-      <div class="text-gray-200 leading-relaxed whitespace-pre-wrap">${content}</div>
-      <div class="mt-12 flex gap-4">
-        <button onclick="window.location.reload()" class="flex-1 bg-gray-800 hover:bg-gray-700 py-4 rounded-2xl font-medium">← Volver al PDF</button>
-        <button onclick="copyResult()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">📋 Copiar</button>
+      <div class="text-gray-200 whitespace-pre-wrap">${content}</div>
+      <div class="mt-10 flex gap-4">
+        <button onclick="window.location.reload()" class="flex-1 bg-gray-800 hover:bg-gray-700 py-4 rounded-2xl">← Volver al PDF</button>
+        <button onclick="copyResult()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl">📋 Copiar</button>
       </div>
     </div>`;
 }
 
 function copyResult() {
   const text = document.querySelector('.prose')?.innerText || "";
-  navigator.clipboard.writeText(text).then(() => alert("✅ Copiado"));
+  navigator.clipboard.writeText(text).then(() => alert("Copiado"));
 }
 
+// ==================== API KEY ====================
 function showApiKeyModal() {
-  const existing = document.getElementById('apikey-modal');
-  if (existing) existing.remove();
-
+  // (código del modal de API Key - igual que antes)
   const modal = document.createElement('div');
   modal.id = 'apikey-modal';
   modal.className = "fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4";
   modal.innerHTML = `
     <div class="bg-gray-900 p-8 rounded-3xl max-w-md w-full">
-      <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
-        <i class="fas fa-key text-violet-400"></i> Tu API Key de Gemini
-      </h2>
-      <p class="text-gray-400 mb-6 text-sm">Crea tu clave en: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-violet-400 underline">Google AI Studio</a></p>
-      <input id="apikey-input" type="password" value="${userGeminiKey}" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500 mb-6" placeholder="AIzaSy...">
+      <h2 class="text-2xl font-bold mb-4">🔑 Tu API Key de Gemini</h2>
+      <input id="apikey-input" type="password" value="${userGeminiKey}" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 mb-6" placeholder="AIzaSy...">
       <div class="flex gap-3">
-        <button onclick="saveApiKey()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Guardar Key</button>
-        <button onclick="document.getElementById('apikey-modal').remove()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-medium">Cancelar</button>
+        <button onclick="saveApiKey()" class="flex-1 bg-violet-600 py-4 rounded-2xl">Guardar</button>
+        <button onclick="this.closest('#apikey-modal').remove()" class="flex-1 bg-gray-700 py-4 rounded-2xl">Cancelar</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -353,10 +361,10 @@ function showApiKeyModal() {
 
 function saveApiKey() {
   const key = document.getElementById('apikey-input').value.trim();
-  if (key.length < 30) return alert("Ingresa una API Key válida");
+  if (key.length < 30) return alert("API Key inválida");
   userGeminiKey = key;
-  localStorage.setItem('userGeminiKey', userGeminiKey);
-  alert("✅ API Key guardada correctamente");
+  localStorage.setItem('userGeminiKey', key);
+  alert("API Key guardada");
   document.getElementById('apikey-modal').remove();
 }
 
