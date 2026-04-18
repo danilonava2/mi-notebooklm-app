@@ -1,4 +1,4 @@
-// script.js - Versión Corregida (Evita Maximum Call Stack + PDFs grandes)
+// script.js - Versión Corregida (Modelo Gemini 2.5 Flash - Abril 2026)
 
 let manifest = {};
 let currentFilePath = "";
@@ -164,11 +164,11 @@ function saveApiKey() {
   document.getElementById('apikey-modal').remove();
 }
 
-// ==================== FUNCIÓN PRINCIPAL CORREGIDA ====================
+// ==================== FUNCIÓN PRINCIPAL (MODELO ACTUALIZADO) ====================
 
 async function generateWithGemini(type) {
   if (!userGeminiKey) {
-    alert("Primero configura tu API Key de Gemini (botón 'Mi API Key')");
+    alert("Primero configura tu API Key de Gemini (botón 'Mi API Key' arriba)");
     showApiKeyModal();
     return;
   }
@@ -186,12 +186,10 @@ async function generateWithGemini(type) {
   viewer.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-950 rounded-3xl">
       <i class="fas fa-spinner fa-spin text-6xl mb-6 text-violet-400"></i>
-      <p class="text-xl">Extrayendo texto del PDF...</p>
-      <p class="text-sm mt-2">Esto puede tardar según el tamaño del documento</p>
+      <p class="text-xl">Extrayendo texto y procesando con Gemini 2.5...</p>
     </div>`;
 
   try {
-    // Extraemos solo el texto (más seguro y ligero)
     const pdfText = await extractPDFText(currentFilePath);
 
     if (pdfText.length < 50) {
@@ -200,7 +198,8 @@ async function generateWithGemini(type) {
 
     const prompt = getPrompt(type, currentTitle) + "\n\nDocumento:\n" + pdfText;
 
-    const model = "gemini-1.5-flash";
+    // Modelo actualizado - Gemini 2.5 Flash (rápido y estable en 2026)
+    const model = "gemini-2.5-flash";
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
@@ -211,8 +210,8 @@ async function generateWithGemini(type) {
     });
 
     if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData.error?.message || `HTTP ${response.status}`);
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `Error ${response.status}`);
     }
 
     const data = await response.json();
@@ -221,17 +220,16 @@ async function generateWithGemini(type) {
       const resultText = data.candidates[0].content.parts[0].text;
       showResultInViewer(type, resultText);
     } else {
-      throw new Error("Respuesta inválida de Gemini");
+      throw new Error("No se recibió respuesta válida de Gemini");
     }
 
   } catch (error) {
     console.error(error);
-    alert("Error al procesar con Gemini:\n" + error.message + "\n\nPrueba con un PDF más pequeño o verifica tu API Key.");
+    alert("Error al procesar con Gemini:\n" + error.message);
     viewer.innerHTML = originalHTML;
   }
 }
 
-// Extrae texto del PDF (versión robusta)
 async function extractPDFText(url) {
   try {
     const loadingTask = pdfjsLib.getDocument(url);
@@ -254,15 +252,15 @@ async function extractPDFText(url) {
 function getPrompt(type, title) {
   switch(type) {
     case 'resumen': 
-      return `Eres un experto en dolor crónico. Haz un resumen profesional y estructurado del documento titulado "${title}". Usa Markdown.`;
+      return `Eres un experto en dolor crónico y medicina. Haz un resumen profesional, claro y bien estructurado del documento "${title}". Usa Markdown con títulos y viñetas.`;
     case 'cuestionario': 
-      return `Crea un cuestionario de 8-10 preguntas (mezcla opción múltiple y desarrollo) basado en "${title}". Incluye respuestas al final.`;
+      return `Crea un cuestionario educativo de 8-10 preguntas basado en el documento "${title}". Incluye preguntas variadas y las respuestas correctas al final.`;
     case 'mapa': 
-      return `Genera un mapa mental claro en Markdown del documento "${title}". Usa emojis y jerarquía.`;
+      return `Genera un mapa mental claro y jerárquico en Markdown del documento "${title}". Usa emojis y estructura con # y -.`;
     case 'audio': 
-      return `Escribe un guion natural para audio/podcast del documento "${title}". Debe sonar conversacional.`;
+      return `Escribe un guion natural y conversacional para audio/podcast del documento "${title}". Debe sonar como una explicación atractiva.`;
     default: 
-      return `Resume claramente el documento titulado "${title}".`;
+      return `Resume de forma clara y profesional el documento "${title}".`;
   }
 }
 
