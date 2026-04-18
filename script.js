@@ -1,4 +1,4 @@
-// script.js - Versión Final con Botón Global Visible
+// script.js - Versión Final Avanzada
 
 let manifest = {};
 let currentFilePath = "";
@@ -6,6 +6,7 @@ let currentTitle = "";
 let currentPdfText = "";
 let userGeminiKey = localStorage.getItem('userGeminiKey') || "";
 let questionHistory = [];
+let allDocumentsText = "";
 
 const pdfjsLib = window['pdfjsLib'];
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -15,6 +16,7 @@ async function loadManifest() {
     const res = await fetch('manifest.json');
     manifest = await res.json();
     buildSidebar();
+    createGlobalButton();
   } catch (e) {
     console.error("Error cargando manifest.json", e);
     document.getElementById("chapters-list").innerHTML = `<p class="text-red-400 p-4">Error cargando los módulos</p>`;
@@ -82,19 +84,19 @@ async function loadFile(chapterKey, fileName, displayName) {
     </button>`;
 }
 
-// ==================== HEADER CON BOTÓN GLOBAL ====================
+// ==================== BOTÓN GLOBAL "Preguntar a Todo el Máster" ====================
 function createGlobalButton() {
   const header = document.querySelector('.p-4.border-b');
   if (!header) return;
 
   const globalBtn = document.createElement('button');
-  globalBtn.className = "bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-2xl flex items-center gap-2 font-medium ml-4";
+  globalBtn.className = "bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium ml-4 shadow-lg";
   globalBtn.innerHTML = `<i class="fas fa-globe"></i> Preguntar a Todo el Máster`;
   globalBtn.onclick = () => startQuestionMode(true);
   header.appendChild(globalBtn);
 }
 
-// ==================== MODAL HERRAMIENTAS IA (solo para PDF seleccionado) ====================
+// ==================== MODAL HERRAMIENTAS IA ====================
 function openIAModal() {
   document.getElementById("ia-modal").classList.remove("hidden");
   showIAOptions();
@@ -124,6 +126,10 @@ function showIAOptions() {
         <i class="fas fa-volume-up text-4xl text-violet-400 mb-3"></i><br>
         <span class="font-semibold">Podcast NotebookLM</span>
       </button>
+      <button onclick="startQuestionMode(false)" class="col-span-2 bg-violet-900/30 hover:bg-violet-900/50 border border-violet-500 p-6 rounded-2xl text-left">
+        <i class="fas fa-question text-4xl text-violet-400 mb-3"></i><br>
+        <span class="font-semibold">Preguntar a este Documento</span>
+      </button>
     </div>`;
 }
 
@@ -135,17 +141,45 @@ async function startQuestionMode(global = false) {
   closeModal();
 
   const viewer = document.getElementById("viewer");
+  viewer.innerHTML = `
+    <div class="flex flex-col items-center justify-center h-full text-gray-400">
+      <i class="fas fa-spinner fa-spin text-6xl mb-6"></i>
+      <p class="text-xl">${global ? 'Cargando todos los documentos del Máster...' : 'Cargando documento...'}</p>
+    </div>`;
 
-  if (!global && !currentFilePath) {
-    alert("Selecciona primero un documento para preguntar sobre él.");
-    return;
-  }
-
-  if (!global && (!currentPdfText || currentPdfText.length < 100)) {
-    viewer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fas fa-spinner fa-spin text-6xl"></i><p class="mt-4">Cargando texto...</p></div>`;
+  if (global) {
+    allDocumentsText = await loadAllDocumentsText();
+  } else if (!currentPdfText || currentPdfText.length < 100) {
     currentPdfText = await extractPDFText(currentFilePath);
   }
 
+  renderQuestionInterface(global);
+}
+
+async function loadAllDocumentsText() {
+  let combinedText = "";
+  const promises = [];
+
+  Object.keys(manifest.chapters).forEach(chapterKey => {
+    const chapter = manifest.chapters[chapterKey];
+    Object.keys(chapter.topics).forEach(fileName => {
+      const path = `data/${chapterKey}/${fileName}`;
+      promises.push(
+        extractPDFText(path).then(text => {
+          if (text && text.length > 50) {
+            combinedText += `\n\n=== DOCUMENTO: ${chapter.topics[fileName]} ===\n${text}\n`;
+          }
+        })
+      );
+    });
+  });
+
+  await Promise.all(promises);
+  return combinedText.trim();
+}
+
+function renderQuestionInterface(global) {
+  const viewer = document.getElementById("viewer");
   viewer.innerHTML = `
     <div class="max-w-4xl mx-auto my-8 bg-gray-900 rounded-3xl p-8">
       <div class="flex justify-between items-center mb-8">
@@ -153,7 +187,7 @@ async function startQuestionMode(global = false) {
           <span class="text-4xl">${global ? '🌐' : '❓'}</span>
           <div>
             <h2 class="text-3xl font-bold">${global ? 'Preguntar a Todo el Máster' : 'Preguntar al Documento'}</h2>
-            <p class="text-gray-400">${global ? 'Busca en todos los PDFs del curso' : currentTitle}</p>
+            <p class="text-gray-400">${global ? 'Buscando en todos los PDFs del curso' : currentTitle}</p>
           </div>
         </div>
         <button onclick="returnToLastPDF()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-2xl flex items-center gap-2">
@@ -162,8 +196,8 @@ async function startQuestionMode(global = false) {
       </div>
 
       <textarea id="user-question" rows="3" 
-        class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500"
-        placeholder="Escribe tu pregunta aquí..."></textarea>
+        class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500" 
+        placeholder="Escribe tu pregunta..."></textarea>
 
       <div class="flex gap-3 mt-4">
         <button onclick="sendQuestion()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Enviar Pregunta</button>
@@ -195,16 +229,19 @@ async function sendQuestion() {
   const historyDiv = document.getElementById("history");
   const loadingId = Date.now();
 
-  historyDiv.innerHTML = `<div id="loading-${loadingId}" class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando...</div>` + historyDiv.innerHTML;
+  historyDiv.innerHTML = `<div id="loading-${loadingId}" class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando tu pregunta...</div>` + historyDiv.innerHTML;
 
   try {
-    let prompt = `Eres un experto en dolor crónico. Responde con precisión y cita las fuentes cuando sea posible.\n\nPregunta: ${question}\n\n`;
+    let context = isGlobalSearch ? allDocumentsText : currentPdfText;
+    let source = isGlobalSearch ? "Todos los documentos del Máster" : currentTitle;
 
-    if (isGlobalSearch) {
-      prompt += "Busca la información más relevante en todo el material del Máster en Dolor.\n\n";
-    } else {
-      prompt += `Documento actual: ${currentTitle}\n\nContenido:\n${currentPdfText}`;
-    }
+    const prompt = `Eres un experto en dolor crónico. Responde usando ÚNICAMENTE la información del contexto proporcionado. 
+Si no encuentras la respuesta, di honestamente que no está en el material.
+
+Pregunta: ${question}
+
+Contexto:
+${context}`;
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
@@ -218,7 +255,7 @@ async function sendQuestion() {
     questionHistory.unshift({
       question: question,
       answer: answer,
-      source: isGlobalSearch ? "Todos los documentos del Máster" : currentTitle,
+      source: source,
       timestamp: new Date().toLocaleTimeString()
     });
 
@@ -292,7 +329,7 @@ function getImprovedPrompt(type, title) {
     case 'resumen': return `Haz un resumen profesional y estructurado del documento "${title}". Usa Markdown con encabezados y viñetas.`;
     case 'cuestionario': return `Crea un cuestionario de 8-10 preguntas sobre "${title}". Mezcla opción múltiple y desarrollo corto. Incluye respuestas al final.`;
     case 'mapa': return `Crea un mapa mental claro y jerárquico en Markdown del documento "${title}". Usa emojis y estructura con #, ## y -.`;
-    case 'audio': return `Genera un guion de podcast estilo NotebookLM con dos hosts (Alex y Sofía) sobre el documento "${title}". Usa formato de diálogo natural y conversacional.`;
+    case 'audio': return `Genera un guion de podcast estilo NotebookLM con dos hosts (Alex y Sofía) sobre el documento "${title}". Usa formato de diálogo natural.`;
     default: return `Resume el documento "${title}".`;
   }
 }
@@ -309,7 +346,7 @@ async function extractPDFText(url) {
     }
     return text.trim();
   } catch (e) {
-    return "Error al extraer texto.";
+    return `Error al extraer ${url}`;
   }
 }
 
@@ -341,7 +378,6 @@ function copyResult() {
   navigator.clipboard.writeText(text).then(() => alert("✅ Copiado"));
 }
 
-// ==================== API KEY ====================
 function showApiKeyModal() {
   const existing = document.getElementById('apikey-modal');
   if (existing) existing.remove();
@@ -370,6 +406,5 @@ function saveApiKey() {
   document.getElementById('apikey-modal').remove();
 }
 
-// Iniciar
+// Iniciar la aplicación
 loadManifest();
-createGlobalButton();   // ← Esto crea el botón visible
