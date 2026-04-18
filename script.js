@@ -1,4 +1,4 @@
-// script.js - Versión Mejorada con IA usando clave personal del usuario
+// script.js - Versión Corregida (Evita Maximum Call Stack + PDFs grandes)
 
 let manifest = {};
 let currentFilePath = "";
@@ -56,13 +56,10 @@ function buildSidebar() {
 
 function toggleChapter(button) {
   const content = button.nextElementSibling;
-  
   document.querySelectorAll('.accordion-content').forEach(item => {
     if (item !== content) item.classList.add('hidden');
   });
-
   content.classList.toggle('hidden');
-  
   const icon = button.querySelector('i');
   icon.classList.toggle('rotate-180');
 }
@@ -123,7 +120,7 @@ function showIAOptions() {
     </div>`;
 }
 
-// ==================== API KEY MANAGEMENT ====================
+// ==================== API KEY ====================
 
 function showApiKeyModal() {
   const existing = document.getElementById('apikey-modal');
@@ -138,25 +135,18 @@ function showApiKeyModal() {
         <i class="fas fa-key text-violet-400"></i> Tu API Key de Gemini
       </h2>
       <p class="text-gray-400 mb-6 text-sm">
-        Cada usuario usa su propia cuota.<br>
         Crea tu clave gratis en: 
         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-violet-400 underline">Google AI Studio</a>
       </p>
       
       <input id="apikey-input" type="password" value="${userGeminiKey}" 
              class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500 mb-6"
-             placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxx">
+             placeholder="AIzaSy...">
       
       <div class="flex gap-3">
-        <button onclick="saveApiKey()" 
-                class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Guardar Key</button>
-        <button onclick="document.getElementById('apikey-modal').remove()" 
-                class="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-medium">Cancelar</button>
+        <button onclick="saveApiKey()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Guardar Key</button>
+        <button onclick="document.getElementById('apikey-modal').remove()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-medium">Cancelar</button>
       </div>
-      
-      <p class="text-xs text-gray-500 mt-6 text-center">
-        La clave se guarda solo en este navegador (localStorage).
-      </p>
     </div>`;
   document.body.appendChild(modal);
 }
@@ -164,29 +154,27 @@ function showApiKeyModal() {
 function saveApiKey() {
   const input = document.getElementById('apikey-input');
   const key = input.value.trim();
-  
   if (key.length < 30) {
-    alert("Por favor ingresa una API Key válida de Gemini");
+    alert("Por favor ingresa una API Key válida");
     return;
   }
-
   userGeminiKey = key;
   localStorage.setItem('userGeminiKey', userGeminiKey);
-  alert("✅ API Key guardada correctamente.\n\nAhora puedes usar las herramientas de IA.");
+  alert("✅ API Key guardada correctamente.");
   document.getElementById('apikey-modal').remove();
 }
 
-// ==================== MAIN IA FUNCTION ====================
+// ==================== FUNCIÓN PRINCIPAL CORREGIDA ====================
 
 async function generateWithGemini(type) {
   if (!userGeminiKey) {
-    alert("Necesitas configurar tu API Key de Gemini primero.");
+    alert("Primero configura tu API Key de Gemini (botón 'Mi API Key')");
     showApiKeyModal();
     return;
   }
 
   if (!currentFilePath) {
-    alert("Primero selecciona un PDF");
+    alert("Selecciona primero un PDF");
     return;
   }
 
@@ -198,35 +186,34 @@ async function generateWithGemini(type) {
   viewer.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-950 rounded-3xl">
       <i class="fas fa-spinner fa-spin text-6xl mb-6 text-violet-400"></i>
-      <p class="text-xl">Procesando documento con Gemini...</p>
-      <p class="text-sm mt-2">Esto puede tardar 10-20 segundos</p>
+      <p class="text-xl">Extrayendo texto del PDF...</p>
+      <p class="text-sm mt-2">Esto puede tardar según el tamaño del documento</p>
     </div>`;
 
   try {
-    // Extraer texto como respaldo + enviar PDF completo (mejor calidad)
-    const pdfBase64 = await getPdfAsBase64(currentFilePath);
+    // Extraemos solo el texto (más seguro y ligero)
+    const pdfText = await extractPDFText(currentFilePath);
 
-    const model = "gemini-1.5-flash";   // Cambia a "gemini-1.5-pro" si el usuario tiene acceso
+    if (pdfText.length < 50) {
+      throw new Error("No se pudo extraer suficiente texto del PDF.");
+    }
 
-    const prompt = getPrompt(type, currentTitle);
+    const prompt = getPrompt(type, currentTitle) + "\n\nDocumento:\n" + pdfText;
+
+    const model = "gemini-1.5-flash";
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { 
-              inlineData: { 
-                mimeType: "application/pdf", 
-                data: pdfBase64 
-              } 
-            }
-          ]
-        }]
+        contents: [{ parts: [{ text: prompt }] }]
       })
     });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error?.message || `HTTP ${response.status}`);
+    }
 
     const data = await response.json();
 
@@ -234,42 +221,54 @@ async function generateWithGemini(type) {
       const resultText = data.candidates[0].content.parts[0].text;
       showResultInViewer(type, resultText);
     } else {
-      throw new Error(data.error?.message || "Respuesta inválida de Gemini");
+      throw new Error("Respuesta inválida de Gemini");
     }
 
   } catch (error) {
     console.error(error);
-    alert("Error al procesar con Gemini:\n" + error.message + "\n\nVerifica que tu API Key sea correcta y tenga cuota disponible.");
+    alert("Error al procesar con Gemini:\n" + error.message + "\n\nPrueba con un PDF más pequeño o verifica tu API Key.");
     viewer.innerHTML = originalHTML;
+  }
+}
+
+// Extrae texto del PDF (versión robusta)
+async function extractPDFText(url) {
+  try {
+    const loadingTask = pdfjsLib.getDocument(url);
+    const pdf = await loadingTask.promise;
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(" ");
+      fullText += pageText + "\n\n";
+    }
+    return fullText.trim();
+  } catch (e) {
+    console.error("Error extrayendo texto:", e);
+    return "Error al extraer texto del PDF.";
   }
 }
 
 function getPrompt(type, title) {
   switch(type) {
-    case 'resumen':
-      return `Eres un profesor experto en dolor crónico y medicina. Haz un **resumen profesional, claro y estructurado** del documento titulado "${title}". Incluye puntos clave, conceptos importantes y conclusiones prácticas. Usa formato Markdown.`;
-    case 'cuestionario':
-      return `Crea un **cuestionario educativo** de 8-10 preguntas basado en el documento "${title}". Mezcla preguntas de opción múltiple y desarrollo corto. Incluye las respuestas correctas al final.`;
-    case 'mapa':
-      return `Genera un **mapa mental completo** en formato Markdown del documento "${title}". Usa emojis, jerarquía con # y ##, y estructura clara para que sea fácil de visualizar.`;
-    case 'audio':
-      return `Escribe un **guion natural y fluido** para un resumen en audio (estilo podcast o explicación hablada) del documento "${title}". Debe sonar conversacional y atractivo. Máximo 700-800 palabras.`;
-    default:
-      return `Resume de forma clara y profesional el siguiente documento.`;
+    case 'resumen': 
+      return `Eres un experto en dolor crónico. Haz un resumen profesional y estructurado del documento titulado "${title}". Usa Markdown.`;
+    case 'cuestionario': 
+      return `Crea un cuestionario de 8-10 preguntas (mezcla opción múltiple y desarrollo) basado en "${title}". Incluye respuestas al final.`;
+    case 'mapa': 
+      return `Genera un mapa mental claro en Markdown del documento "${title}". Usa emojis y jerarquía.`;
+    case 'audio': 
+      return `Escribe un guion natural para audio/podcast del documento "${title}". Debe sonar conversacional.`;
+    default: 
+      return `Resume claramente el documento titulado "${title}".`;
   }
-}
-
-async function getPdfAsBase64(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("No se pudo cargar el PDF");
-  const buffer = await response.arrayBuffer();
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
 function showResultInViewer(type, content) {
   const viewer = document.getElementById("viewer");
-  let emoji = "🧠";
-  let titleText = "";
+  let emoji = "🧠", titleText = "Resultado IA";
 
   switch(type) {
     case 'resumen': emoji = "📝"; titleText = "Resumen Profesional"; break;
@@ -284,31 +283,18 @@ function showResultInViewer(type, content) {
         <span class="text-5xl">${emoji}</span>
         <h2 class="text-3xl font-bold m-0">${titleText}</h2>
       </div>
-      
-      <div class="text-gray-200 leading-relaxed whitespace-pre-wrap text-base">${content}</div>
-      
+      <div class="text-gray-200 leading-relaxed whitespace-pre-wrap">${content}</div>
       <div class="mt-12 flex gap-4">
-        <button onclick="window.location.reload()" 
-                class="flex-1 bg-gray-800 hover:bg-gray-700 py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
-          ← Volver al PDF
-        </button>
-        <button onclick="copyResult()" 
-                class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
-          📋 Copiar resultado
-        </button>
+        <button onclick="window.location.reload()" class="flex-1 bg-gray-800 hover:bg-gray-700 py-4 rounded-2xl font-medium">← Volver al PDF</button>
+        <button onclick="copyResult()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">📋 Copiar</button>
       </div>
     </div>`;
 }
 
 function copyResult() {
-  const textElement = document.querySelector('.prose');
-  if (textElement) {
-    const text = textElement.innerText;
-    navigator.clipboard.writeText(text).then(() => {
-      alert("✅ Resultado copiado al portapapeles");
-    });
-  }
+  const text = document.querySelector('.prose')?.innerText || "";
+  navigator.clipboard.writeText(text).then(() => alert("✅ Copiado al portapapeles"));
 }
 
-// Iniciar la aplicación
+// Iniciar
 loadManifest();
