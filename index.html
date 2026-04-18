@@ -1,0 +1,40 @@
+!DOCTYPE html
+html lang=es
+head
+  meta charset=UTF-8
+  meta name=viewport content=width=device-width, initial-scale=1.0
+  titleMi NotebookLMtitle
+  script src=httpscdn.tailwindcss.comscript
+  link rel=stylesheet href=httpscdnjs.cloudflare.comajaxlibsfont-awesome6.6.0cssall.min.css
+  style
+    .viewer { height calc(100vh - 180px); }
+  style
+head
+body class=bg-gray-950 text-gray-100
+  div class=flex h-screen
+    !-- Sidebar --
+    div class=w-80 bg-gray-900 border-r border-gray-700 overflow-y-auto
+      div class=p-5 border-b border-gray-700
+        h1 class=text-2xl font-bold text-emerald-400 flex items-center gap-2
+          📚 Mi NotebookLM
+        h1
+      div
+      div id=chapters-list class=p-3div
+    div
+
+    !-- Contenido principal --
+    div class=flex-1 flex flex-col
+      div class=p-4 border-b border-gray-700 bg-gray-900 flex justify-between items-center
+        h2 id=current-title class=text-xl font-semiboldSelecciona un temah2
+        div id=notebooklm-buttons class=hidden flex-wrap gap-2div
+      div
+      
+      div id=viewer class=viewer p-6 bg-gray-950 overflow-auto
+        p class=text-gray-400 text-center mt-32← Selecciona un archivo del menúp
+      div
+    div
+  div
+
+  script src=script.jsscript
+body
+html

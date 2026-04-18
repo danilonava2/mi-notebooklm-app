@@ -1,0 +1,146 @@
+{
+  "chapters": {
+    "MÓDULO 1. ASPECTOS GENERALES DEL MANEJO Y CONTROL DEL DOLOR": {
+      "name": "MÓDULO 1 - Aspectos Generales del Manejo y Control del Dolor",
+      "topics": {
+        "1. Epidemiología, conceptos clave y clasificación del dolor.pdf": "1. Epidemiología, conceptos clave y clasificación del dolor",
+        "2. Neuroanatomía y neurobiología del dolor.pdf": "2. Neuroanatomía y neurobiología del dolor",
+        "3. Fisiopatología del dolor.pdf": "3. Fisiopatología del dolor",
+        "4. Valoración del dolor.pdf": "4. Valoración del dolor",
+        "5. Historia clínica en paciente con dolor agudo postoperatorio o dolor crónico.pdf": "5. Historia clínica",
+        "6. Exploración física del paciente con dolor.pdf": "6. Exploración física",
+        "7. Pruebas complementarias para el diagnóstico del dolor.pdf": "7. Pruebas complementarias",
+        "8. Aspectos psicológicos, psicosociales y cognitivo-conductuales del dolor. Terapias psicológicas.pdf": "8. Aspectos psicológicos y terapias",
+        "9. Bases terapéuticas para el tratamiento del dolor.pdf": "9. Bases terapéuticas",
+        "10. Educación en el dolor para personas ajenas al ámbito sanitario.pdf": "10. Educación en el dolor"
+      }
+    },
+    "MÓDULO 2. FARMACOLOGÍA DEL DOLOR": {
+      "name": "MÓDULO 2 - Farmacología del Dolor",
+      "topics": {
+        "1. Generalidades sobre manejo farmacológico del dolor.pdf": "1. Generalidades farmacológicas",
+        "2. Fármacos analgésicos antipiréticos.pdf": "2. Analgésicos antipiréticos",
+        "3. Fármacos antiinflamatorios no esteroides (AINES).pdf": "3. AINES",
+        "4. Fármacos antiinflamatorios esteroideos.pdf": "4. Antiinflamatorios esteroideos",
+        "5. Analgésicos opioides.pdf": "5. Analgésicos opioides",
+        "6. Anestésicos locales.pdf": "6. Anestésicos locales",
+        "7. Coadyuvantes analgésicos.pdf": "7. Coadyuvantes analgésicos",
+        "8. Vías y técnicas de administración de analgésicos.pdf": "8. Vías y técnicas de administración",
+        "9. Analgesia Multimodal.pdf": "9. Analgesia Multimodal",
+        "10. Analgesia Preemptive y analgesia preventiva.pdf": "10. Analgesia Preemptive"
+      }
+    },
+    "MÓDULO 3. CONSIDERACIONES DEL DOLOR AGUDO POSTOPERATORIO. SITUACIONES CLÍNICAS. PROCEDIMIENTOS QUIRÚRGICOS": {
+      "name": "MÓDULO 3 - Dolor Agudo Postoperatorio",
+      "topics": {
+        "3. Manejo del dolor agudo postoperatorio en el paciente anciano y el paciente con comorbilidades.pdf": "3. Paciente anciano y comorbilidades",
+        "4. Manejo del dolor agudo postoperatorio en Cirugía Mayor Ambulatoria.pdf": "4. Cirugía Mayor Ambulatoria",
+        "5. Dolor agudo postoperatorio en cirugía abdominal y digestiva.pdf": "5. Cirugía abdominal y digestiva",
+        "6. Dolor agudo en cirugía torácica.pdf": "6. Cirugía torácica",
+        "7. Dolor agudo postoperatorio en cirugía cardíaca.pdf": "7. Cirugía cardíaca",
+        "8. Dolor agudo postoperatorio en cirugía ortopédica y traumatología.pdf": "8. Cirugía ortopédica y traumatología",
+        "10. Consideraciones en la cronificación del Dolor Agudo postoperatorio.pdf": "10. Cronificación del dolor postoperatorio"
+      }
+    },
+    "MÓDULO 4. DOLOR EN GINECOLOGÍA Y PACIENTE OBSTÉTRICA": {
+      "name": "MÓDULO 4 - Dolor en Ginecología y Paciente Obstétrica",
+      "topics": {
+        "1. Consideraciones generales del dolor de origen ginecológico.pdf": "1. Consideraciones generales",
+        "2. Control del dolor agudo postoperatorio en cirugía ginecológica.pdf": "2. Postoperatorio en cirugía ginecológica",
+        "3. Consideraciones en el dolor abdomino-pélvico.pdf": "3. Dolor abdomino-pélvico",
+        "4. Manejo del dolor perineal.pdf": "4. Dolor perineal",
+        "5. Patologías específicas ginecológicas. La enfermedad inflamatoria pélvica.pdf": "5. Enfermedad inflamatoria pélvica",
+        "6. Manejo del dolor en el embarazo.pdf": "6. Dolor en el embarazo",
+        "7. El dolor en el parto y puerperio.pdf": "7. Dolor en parto y puerperio",
+        "8. Manejo del dolor durante la lactancia.pdf": "8. Dolor durante la lactancia",
+        "9. Control del dolor oncológico de origen ginecológico.pdf": "9. Dolor oncológico ginecológico"
+      }
+    },
+    "MÓDULO 5. DOLOR AGUDO Y CRÓNICO EN EL PACIENTE PEDIÁTRICO": {
+      "name": "MÓDULO 5 - Dolor en el Paciente Pediátrico",
+      "topics": {
+        "1. Aspectos generales sobre el dolor en la población pediátrica en nuestro entorno.pdf": "1. Aspectos generales",
+        "2. Valoración del dolor en la población pediátrica.pdf": "2. Valoración del dolor",
+        "3. Procedimientos terapéuticos para el abordaje del dolor en el paciente pediátrico.pdf": "3. Procedimientos terapéuticos",
+        "4. El dolor agudo postoperatorio infantil I.pdf": "4. Dolor agudo postoperatorio I",
+        "5. El dolor agudo postoperatorio infantil II.pdf": "5. Dolor agudo postoperatorio II",
+        "6. Dolor crónico en el paciente pediátrico I.pdf": "6. Dolor crónico I",
+        "7. Dolor crónico en el paciente pediátrico II.pdf": "7. Dolor crónico II",
+        "8. Dolor en oncología pediátrica.pdf": "8. Dolor en oncología pediátrica"
+      }
+    },
+    "MÓDULO 6. DOLOR CRÓNICO DOLOR NEUROPÁTICO": {
+      "name": "MÓDULO 6 - Dolor Neuropático",
+      "topics": {
+        "1. Generalidades sobre dolor neuropático. Definición. Clasificación.pdf": "1. Generalidades",
+        "2. Consideraciones clínicas y diagnósticas del dolor neuropático.pdf": "2. Consideraciones clínicas",
+        "3. Estrategias terapéuticas para el control del dolor neuropático.pdf": "3. Estrategias terapéuticas",
+        "4. Síndrome doloroso regional complejo (SDRC).pdf": "4. Síndrome doloroso regional complejo",
+        "5. Dolor neuropático de origen central.pdf": "5. Dolor de origen central",
+        "6. Dolor del miembro fantasma.pdf": "6. Dolor del miembro fantasma",
+        "7. Neuralgia postherpética.pdf": "7. Neuralgia postherpética",
+        "8. Polineuropatías.pdf": "8. Polineuropatías",
+        "9. Algias faciales.pdf": "9. Algias faciales"
+      }
+    },
+    "MÓDULO 7. DOLOR CRÓNICO DOLOR MUSCULOESQUELÉTICO": {
+      "name": "MÓDULO 7 - Dolor Musculoesquelético",
+      "topics": {
+        "1. Consideraciones generales. Definición y clasificación.pdf": "1. Consideraciones generales",
+        "2. Epidemiología y etiología del dolor musculoesquelético.pdf": "2. Epidemiología y etiología",
+        "3. Historia clínica y exploración física en el dolor musculoesquelético.pdf": "3. Historia clínica y exploración",
+        "4. Diagnóstico del dolor musculoesquelético.pdf": "4. Diagnóstico",
+        "5. Medidas terapéuticas en el control del dolor musculoesquelético.pdf": "5. Medidas terapéuticas",
+        "6. Miopatías.pdf": "6. Miopatías",
+        "7. Dolor de origen articular.pdf": "7. Dolor articular",
+        "8. Fibromialgia, Síndrome de fatiga crónica y Síndrome de sensibilidad central.pdf": "8. Fibromialgia y síndromes centrales",
+        "9. Síndrome de la cirugía fallida de espalda (FBSS).pdf": "9. Síndrome de cirugía fallida de espalda"
+      }
+    },
+    "MÓDULO 8. DOLOR CRÓNICO DOLOR ONCOLÓGICO": {
+      "name": "MÓDULO 8 - Dolor Oncológico",
+      "topics": {
+        "1. Aspectos generales del dolor oncológico. Situación actual del dolor oncológico en nuestro entorno.pdf": "1. Aspectos generales",
+        "2. Fisiopatología del dolor oncológico.pdf": "2. Fisiopatología",
+        "3. Evaluación del dolor en el paciente oncológico.pdf": "3. Evaluación",
+        "4. Manejo diagnóstico en el dolor oncológico.pdf": "4. Manejo diagnóstico",
+        "5. Tratamiento farmacológico del dolor oncológico.pdf": "5. Tratamiento farmacológico",
+        "6. Tratamiento no farmacológico del dolor oncológico.pdf": "6. Tratamiento no farmacológico",
+        "7. Tratamiento intervencionista del dolor oncológico.pdf": "7. Tratamiento intervencionista",
+        "8. Tratamiento psicológico del dolor oncológico.pdf": "8. Tratamiento psicológico",
+        "9. Consideraciones específicas en distintos tipos de tumor.pdf": "9. Consideraciones por tipo de tumor",
+        "10. Tratamiento paliativo en el paciente con dolor oncológico.pdf": "10. Tratamiento paliativo"
+      }
+    },
+    "MÓDULO 9. DOLOR VISCERAL Y OTRAS ENTIDADES CLÍNICAS EN EL ÁMBITO DEL DOLOR CRÓNICO": {
+      "name": "MÓDULO 9 - Dolor Visceral y Otras Entidades",
+      "topics": {
+        "1. Consideraciones generales y etiopatogenia del dolor visceral.pdf": "1. Consideraciones generales",
+        "2. Dolor abdominal difuso. Pancreatitis (I) Epidemiología y valoración clínica y metodología diagnóstica.pdf": "2. Pancreatitis I",
+        "3. Dolor abdominal difuso. Pancreatitis (II). Manejo diagnóstico y terapéutico.pdf": "3. Pancreatitis II",
+        "4. Dolor pélvico crónico, cistitis intersticial y patología rectal (I). Valoración clínica y metodología diagnóstica.pdf": "4. Dolor pélvico I",
+        "5. Dolor pélvico crónico, cistitis intersticial y patología rectal (II). Manejo diagnóstico y terapéutico.pdf": "5. Dolor pélvico II",
+        "6. Dolor anginoso crónico.pdf": "6. Dolor anginoso crónico",
+        "7. Dolor por isquemia vascular periférica.pdf": "7. Isquemia vascular periférica",
+        "8. Actualizaciones en cefaleas y migrañas I. generalidades.pdf": "8. Cefaleas y migrañas I",
+        "9. Actualizaciones en cefaleas y migrañas II Entidades clínicas.pdf": "9. Cefaleas y migrañas II"
+      }
+    },
+    "MÓDULO 10. TRATAMIENTO INTERVENCIONISTA DEL DOLOR": {
+      "name": "MÓDULO 10 - Tratamiento Intervencionista del Dolor",
+      "topics": {
+        "1. Consideraciones generales sobre el tratamiento intervencionista del dolor.pdf": "1. Consideraciones generales",
+        "2. Bloqueo diagnóstico-terapéutico de puntos gatillos y musculotendinosos. Bloqueo muscular profundo.pdf": "2. Bloqueo de puntos gatillo",
+        "3. Bloqueo articular de hombro, rodilla, coxo-femoral, sacroilíaco y otras articulaciones.pdf": "3. Bloqueo articular",
+        "4. Bloqueo epidural interlaminar y transforaminal bajo control de imagen.pdf": "4. Bloqueo epidural",
+        "5.Bloqueo y Radiofrecuencia de nervios periféricos.pdf": "5. Radiofrecuencia nervios periféricos",
+        "6. Radiofrecuencia de ganglios de la raíz dorsal. cervicales, dorsales, lumbares o sacros.pdf": "6. Radiofrecuencia raíz dorsal",
+        "7. Bloqueo y Radiofrecuencia de ramo medial facetario a nivel cervical, dorsal y lumbar.pdf": "7. Ramo medial facetario",
+        "8. Radiofrecuencia refrigerada.pdf": "8. Radiofrecuencia refrigerada",
+        "9. Bloqueo y Radiofrecuencia ganglios simpáticos. estrellado, simpático lumbar, hipogástrico, impar.pdf": "9. Ganglios simpáticos",
+        "10. Epidurolisis y Epiduroscopia diagnóstico-terapéuticas.pdf": "10. Epidurolisis y Epiduroscopia",
+        "12. Técnicas neuroquirúrgicas II implante de sistema de infusión intratecal.pdf": "12. Infusión intratecal"
+      }
+    }
+  }
+}
