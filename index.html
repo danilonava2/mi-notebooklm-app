@@ -3,28 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Máster Dolor</title>
+  <title>Máster en Dolor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
     .viewer { height: calc(100vh - 70px); }
-    .accordion-content { max-height: 0; overflow: hidden; transition: all 0.3s ease; }
-    .accordion-content.open { max-height: 800px; }
+    .accordion-content { transition: all 0.3s ease; }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100">
-  <div class="flex h-screen">
+  <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
     <div class="w-80 bg-gray-900 border-r border-gray-700 overflow-y-auto">
-      <div class="p-4 border-b border-gray-700 bg-gray-950">
+      <div class="p-5 border-b border-gray-700 bg-gray-950 sticky top-0">
         <h1 class="text-xl font-bold text-white">📚 Máster en Dolor</h1>
       </div>
       <div id="chapters-list" class="p-3"></div>
     </div>
 
-    <!-- Contenido principal -->
+    <!-- Main Content -->
     <div class="flex-1 flex flex-col">
       <div class="p-4 border-b border-gray-700 bg-gray-900 flex justify-between items-center">
         <h2 id="current-title" class="text-lg font-semibold">Selecciona un tema</h2>
@@ -39,10 +37,8 @@
   <div id="ia-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
     <div class="bg-gray-900 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
       <div class="p-5 border-b border-gray-700 flex justify-between items-center">
-        <h3 class="text-xl font-bold flex items-center gap-2">
-          <i class="fas fa-brain text-purple-400"></i> Herramientas IA
-        </h3>
-        <button onclick="closeModal()" class="text-3xl text-gray-400 hover:text-white">×</button>
+        <h3 class="text-xl font-bold">🧠 Herramientas IA</h3>
+        <button onclick="closeModal()" class="text-4xl text-gray-400 hover:text-white leading-none">×</button>
       </div>
       <div class="p-6 overflow-auto" id="ia-content" style="max-height: calc(90vh - 80px);"></div>
     </div>
