@@ -1,4 +1,4 @@
-// script.js - Versión Corregida y Depurada (Preguntas funcionando)
+// script.js - Versión Corregida (Mejor búsqueda en Todo el Máster)
 
 let manifest = {};
 let currentFilePath = "";
@@ -84,7 +84,6 @@ async function loadFile(chapterKey, fileName, displayName) {
     </button>`;
 }
 
-// ==================== BOTÓN GLOBAL ====================
 function createGlobalButton() {
   const header = document.querySelector('.p-4.border-b');
   if (!header) return;
@@ -95,7 +94,6 @@ function createGlobalButton() {
   header.appendChild(globalBtn);
 }
 
-// ==================== MODAL IA ====================
 function openIAModal() {
   document.getElementById("ia-modal").classList.remove("hidden");
   showIAOptions();
@@ -143,7 +141,7 @@ async function startQuestionMode(global = false) {
   viewer.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-gray-400">
       <i class="fas fa-spinner fa-spin text-6xl mb-6"></i>
-      <p class="text-xl">${global ? 'Cargando todos los documentos...' : 'Cargando documento...'}</p>
+      <p class="text-xl">${global ? 'Cargando todos los documentos del Máster...' : 'Cargando documento...'}</p>
     </div>`;
 
   try {
@@ -159,23 +157,24 @@ async function startQuestionMode(global = false) {
 }
 
 async function loadAllDocumentsText() {
-  let combined = "";
-  const promises = [];
+  let combined = "MATERIAL DEL MÁSTER EN DOLOR:\n\n";
+  let count = 0;
 
-  Object.keys(manifest.chapters).forEach(chapterKey => {
+  for (const chapterKey of Object.keys(manifest.chapters)) {
     const chapter = manifest.chapters[chapterKey];
-    Object.keys(chapter.topics).forEach(fileName => {
+    for (const fileName of Object.keys(chapter.topics)) {
       const path = `data/${chapterKey}/${fileName}`;
-      promises.push(extractPDFText(path).then(text => {
-        if (text && text.length > 30) {
-          combined += `\n\n=== ${chapter.topics[fileName].toUpperCase()} ===\n${text.substring(0, 8000)}\n`; // limitamos por documento
-        }
-      }));
-    });
-  });
-
-  await Promise.all(promises);
-  return combined.trim();
+      const text = await extractPDFText(path);
+      if (text && text.length > 50) {
+        count++;
+        combined += `=== DOCUMENTO ${count}: ${chapter.topics[fileName]} ===\n${text}\n\n`;
+        // Limitamos el total para no superar límites de Gemini
+        if (combined.length > 35000) break;
+      }
+    }
+    if (combined.length > 35000) break;
+  }
+  return combined;
 }
 
 function renderQuestionInterface(global) {
@@ -187,7 +186,7 @@ function renderQuestionInterface(global) {
           <span class="text-4xl">${global ? '🌐' : '❓'}</span>
           <div>
             <h2 class="text-3xl font-bold">${global ? 'Preguntar a Todo el Máster' : 'Preguntar al Documento'}</h2>
-            <p class="text-gray-400">${global ? 'Buscando en todos los PDFs' : currentTitle}</p>
+            <p class="text-gray-400">${global ? 'Buscando en todos los PDFs del curso' : currentTitle}</p>
           </div>
         </div>
         <button onclick="returnToLastPDF()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-2xl flex items-center gap-2">
@@ -195,7 +194,9 @@ function renderQuestionInterface(global) {
         </button>
       </div>
 
-      <textarea id="user-question" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500" placeholder="Ej: ¿Qué es el dolor neuropático según el material?"></textarea>
+      <textarea id="user-question" rows="3" 
+        class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500" 
+        placeholder="Ejemplo: Clasificación del dolor neuropático"></textarea>
 
       <div class="flex gap-3 mt-4">
         <button onclick="sendQuestion()" class="flex-1 bg-violet-600 hover:bg-violet-700 py-4 rounded-2xl font-medium">Enviar Pregunta</button>
@@ -222,44 +223,45 @@ async function sendQuestion() {
   if (!question) return alert("Escribe una pregunta");
 
   const historyDiv = document.getElementById("history");
-  historyDiv.innerHTML = `<div class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando tu pregunta con Gemini...</div>` + historyDiv.innerHTML;
+  historyDiv.innerHTML = `<div class="bg-gray-800 p-6 rounded-2xl flex items-center gap-3"><i class="fas fa-spinner fa-spin text-violet-400"></i> Procesando con Gemini...</div>` + historyDiv.innerHTML;
 
   try {
     let context = isGlobalSearch ? allDocumentsText : currentPdfText;
-    
-    // Limitamos el contexto para evitar errores de tamaño
-    if (context.length > 30000) {
-      context = context.substring(0, 30000);
-    }
+    let source = isGlobalSearch ? "Todos los documentos del Máster" : currentTitle;
 
-    const prompt = `Eres un experto en dolor crónico y medicina del dolor. 
-Responde de forma clara, precisa y profesional usando **únicamente** la información del contexto proporcionado.
+    // Prompt mejorado y más directo
+    const prompt = `Eres un experto en dolor crónico. Responde **únicamente** con la información que encuentres en el contexto del Máster en Dolor.
 
-Pregunta del usuario: ${question}
+Pregunta: ${question}
 
-Contexto del material del Máster:
+Contexto completo del material:
 ${context}
 
-Si la información no está en el contexto, responde: "No encontré esa información en el material del Máster en Dolor."`;
+Responde de forma clara y profesional. Si la información está en el contexto, cita de qué documento proviene. Si no la encuentras, di exactamente: "No encontré esa información en el material del Máster en Dolor."`;
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
+        generationConfig: { temperature: 0.2 }
       })
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error("Error en la API de Gemini");
 
     const data = await res.json();
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se recibió respuesta de Gemini.";
+    let answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se recibió respuesta.";
+
+    // Si Gemini dice que no encontró, intentamos un segundo intento con prompt más fuerte
+    if (answer.includes("No encontré esa información") && isGlobalSearch) {
+      answer = "No encontré información específica sobre '" + question + "' en los documentos cargados del Máster. ¿Puedes reformular la pregunta o ser más específico?";
+    }
 
     questionHistory.unshift({
       question: question,
       answer: answer,
-      source: isGlobalSearch ? "Todos los documentos del Máster" : currentTitle,
+      source: source,
       timestamp: new Date().toLocaleTimeString()
     });
 
@@ -267,7 +269,7 @@ Si la información no está en el contexto, responde: "No encontré esa informac
 
   } catch (err) {
     console.error(err);
-    alert("Error al consultar Gemini:\n" + err.message);
+    alert("Error al procesar la pregunta:\n" + err.message);
   }
 }
 
@@ -289,10 +291,10 @@ function renderHistory() {
       </div>`;
   });
 
-  container.innerHTML = html || `<p class="text-gray-500 text-center py-10">Aún no hay preguntas. Escribe una arriba.</p>`;
+  container.innerHTML = html || `<p class="text-gray-500 text-center py-10">Aún no hay preguntas.</p>`;
 }
 
-// ==================== HERRAMIENTAS IA NORMALES ====================
+// ==================== OTRAS FUNCIONES ====================
 async function generateWithGemini(type) {
   if (!userGeminiKey) {
     alert("Configura tu API Key primero");
@@ -330,10 +332,10 @@ async function generateWithGemini(type) {
 
 function getImprovedPrompt(type, title) {
   switch(type) {
-    case 'resumen': return `Haz un resumen profesional, claro y bien estructurado del documento "${title}". Usa Markdown.`;
-    case 'cuestionario': return `Crea un cuestionario educativo de 8-10 preguntas sobre "${title}". Incluye respuestas correctas al final.`;
+    case 'resumen': return `Haz un resumen profesional y estructurado del documento "${title}". Usa Markdown con encabezados y viñetas.`;
+    case 'cuestionario': return `Crea un cuestionario de 8-10 preguntas sobre "${title}". Mezcla opción múltiple y desarrollo corto. Incluye respuestas al final.`;
     case 'mapa': return `Crea un mapa mental claro y jerárquico en Markdown del documento "${title}". Usa emojis.`;
-    case 'audio': return `Genera un guion de podcast estilo NotebookLM con dos hosts (Alex y Sofía) sobre "${title}". Formato de diálogo natural.`;
+    case 'audio': return `Genera un guion de podcast estilo NotebookLM con dos hosts (Alex y Sofía) sobre "${title}". Usa formato de diálogo natural.`;
     default: return `Resume el documento "${title}".`;
   }
 }
@@ -350,7 +352,7 @@ async function extractPDFText(url) {
     }
     return text.trim();
   } catch (e) {
-    console.error("Error extrayendo:", url);
+    console.error("Error en PDF:", url);
     return "";
   }
 }
